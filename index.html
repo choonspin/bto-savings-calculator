@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BTO Savings Calculator</title>
+  <meta name="description" content="Work out how much to save each month for a Singapore BTO flat: CPF, cash, renovation and trips before you collect your keys.">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+
+  <!-- Link previews in chat apps and social media -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://choonspin.github.io/bto-savings-calculator/">
+  <meta property="og:title" content="BTO Savings Calculator">
+  <meta property="og:description" content="How much to save each month for your BTO flat, with CPF, reno and trips before keys.">
+  <meta property="og:image" content="https://choonspin.github.io/bto-savings-calculator/assets/preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A monthly savings target split between two people, beside an HDB block whose windows light up as you save">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fredoka:wght@500;600;700&family=Gochi+Hand&display=swap">
+  <link rel="stylesheet" href="src/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script type="module" src="src/main.js"></script>
+</head>
+<body>
+  <!-- Settings for this copy of the calculator. See README for the options. -->
+  <script type="application/json" id="planner-config">{}</script>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <symbol id="plane" viewBox="0 0 24 24"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8.5l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" /></symbol>
+  </svg>
+
+  <header class="top">
+    <div class="wrap top-inner">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 40 40" aria-hidden="true">
+          <rect class="trim" x="7" y="4" width="26" height="5" rx="2" />
+          <rect class="wall" x="9" y="8" width="22" height="26" rx="2" />
+          <rect class="win on" x="12" y="12" width="6" height="4" rx="1" />
+          <rect class="win" x="22" y="12" width="6" height="4" rx="1" />
+          <rect class="win on" x="12" y="19" width="6" height="4" rx="1" />
+          <rect class="win on" x="22" y="19" width="6" height="4" rx="1" />
+          <rect class="void" x="9" y="27" width="22" height="7" />
+          <rect class="ground" x="3" y="34" width="34" height="3" rx="1.5" />
+        </svg>
+        <div>
+          <div id="brand-name" class="brand-name">BTO Savings Calculator</div>
+          <div class="brand-sub"><span id="brand-place"></span>Keys <span id="brand-keys"></span> &middot; <span id="save-status">Saved in this browser</span></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="send-plan" type="button" class="btn">Send<span class="btn-long"> my</span> plan</button>
+        <button id="share" type="button" class="btn btn--ink">Share<span class="btn-long"> calculator</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap page">
+
+    <section id="linked-plan" class="linked-plan panel" aria-labelledby="linked-plan-title" hidden>
+      <div>
+        <h2 id="linked-plan-title" class="linked-plan-title">Someone sent you their plan</h2>
+        <p class="linked-plan-text">Opening it replaces the numbers saved in this browser.</p>
+      </div>
+      <div class="linked-plan-actions">
+        <button id="open-linked-plan" type="button" class="btn btn--ink">Open their plan</button>
+        <button id="keep-my-plan" type="button" class="btn">Keep mine</button>
+      </div>
+    </section>
+
+    <section class="hero panel" aria-labelledby="hero-kicker">
+      <div class="hero-answer">
+        <span id="status-pill" class="sticker"></span>
+        <p id="hero-kicker" class="hero-kicker">To collect your keys in <strong id="hero-keys"></strong> with the downpayment, reno and trips paid for, save</p>
+        <p class="hero-figure">
+          <span id="required-total" class="hero-amount"></span>
+          <span id="required-unit" class="hero-unit"></span>
+        </p>
+        <div id="hero-shares" class="hero-shares">
+          <div id="share-0" class="share cord" data-color-of="0">
+            <span data-bunny></span>
+            <span class="share-text">
+              <span class="share-who"></span>
+              <span class="share-amount"></span>
+              <span class="share-sub"></span>
+            </span>
+          </div>
+          <div id="share-1" class="share cord" data-color-of="1">
+            <span data-bunny></span>
+            <span class="share-text">
+              <span class="share-who"></span>
+              <span class="share-amount"></span>
+              <span class="share-sub"></span>
+            </span>
+          </div>
+        </div>
+        <p id="status-text" class="hero-status"></p>
+      </div>
+
+      <figure class="hero-block">
+        <span class="note">lights on = saved!</span>
+        <svg id="block" viewBox="0 0 240 244" role="img" aria-labelledby="block-caption"></svg>
+        <figcaption id="block-caption"></figcaption>
+      </figure>
+    </section>
+
+    <section class="road panel" aria-labelledby="road-title">
+      <div class="road-head">
+        <h2 id="road-title" class="road-title">The road to your keys</h2>
+        <span id="road-caption" class="road-caption"></span>
+      </div>
+      <div id="timeline" class="timeline">
+        <div class="timeline-track"></div>
+        <div id="timeline-run" class="timeline-run"></div>
+        <div id="timeline-late" class="timeline-late"></div>
+        <ol id="stops" class="stops"></ol>
+        <div id="walkers" class="walkers" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="numbers-title">
+      <div class="section-head">
+        <h2 id="numbers-title" class="section-title">Your numbers</h2>
+        <label class="toggle"><input type="checkbox" data-field="couple"> Buying with a partner</label>
+      </div>
+
+      <div id="cards" class="cards">
+        <div class="card cord" data-color-of="0">
+          <div class="card-head">
+            <span data-bunny></span>
+            <div class="card-head-text">
+              <input class="name-input" type="text" maxlength="20" data-field="people.0.name" aria-label="First person's name">
+              <div class="swatches" role="radiogroup" aria-label="First person's colour" data-swatches="0"></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="gross-0">Gross monthly salary</label><output data-for="people.0.gross"></output></div>
+            <input id="gross-0" class="range" type="range" min="0" max="15000" step="250" data-field="people.0.gross">
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="saving-0">Cash saved each month</label><output data-for="people.0.saving"></output></div>
+            <input id="saving-0" class="range" type="range" min="0" max="6000" step="100" data-field="people.0.saving">
+          </div>
+          <div class="field-inline">
+            <label for="starts-0">Starts working</label>
+            <div class="month-field" data-months="any">
+              <input type="hidden" data-field="people.0.startsWork">
+              <button id="starts-0" type="button" class="month-button"></button>
+            </div>
+          </div>
+          <dl class="paycheck">
+            <div><dt>Take-home</dt><dd id="person-0-take-home"></dd></div>
+            <div><dt>To CPF OA</dt><dd id="person-0-oa"></dd></div>
+            <div><dt>To spend</dt><dd id="person-0-spend"></dd></div>
+          </dl>
+        </div>
+
+        <div id="card-1" class="card cord" data-color-of="1">
+          <div class="card-head">
+            <span data-bunny></span>
+            <div class="card-head-text">
+              <input class="name-input" type="text" maxlength="20" data-field="people.1.name" aria-label="Partner's name">
+              <div class="swatches" role="radiogroup" aria-label="Partner's colour" data-swatches="1"></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="gross-1">Gross monthly salary</label><output data-for="people.1.gross"></output></div>
+            <input id="gross-1" class="range" type="range" min="0" max="15000" step="250" data-field="people.1.gross">
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="saving-1">Cash saved each month</label><output data-for="people.1.saving"></output></div>
+            <input id="saving-1" class="range" type="range" min="0" max="6000" step="100" data-field="people.1.saving">
+          </div>
+          <div class="field-inline">
+            <label for="starts-1">Starts working</label>
+            <div class="month-field" data-months="any">
+              <input type="hidden" data-field="people.1.startsWork">
+              <button id="starts-1" type="button" class="month-button"></button>
+            </div>
+          </div>
+          <dl class="paycheck">
+            <div><dt>Take-home</dt><dd id="person-1-take-home"></dd></div>
+            <div><dt>To CPF OA</dt><dd id="person-1-oa"></dd></div>
+            <div><dt>To spend</dt><dd id="person-1-spend"></dd></div>
+          </dl>
+        </div>
+
+        <div class="card card--mint">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h3 class="card-title">The flat</h3>
+              <span class="card-meta">HDB loan for 75% of the price</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="price">Price after grants</label><output data-for="flat.price"></output></div>
+            <input id="price" class="range" type="range" min="150000" max="1000000" step="1000" data-field="flat.price">
+            <div id="price-presets" class="presets" hidden></div>
+          </div>
+          <div class="field-inline">
+            <label for="keys">Key collection</label>
+            <div class="month-field" data-months="future">
+              <input type="hidden" data-field="flat.keys">
+              <button id="keys" type="button" class="month-button"></button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="reno">Reno and furniture</label><output data-for="flat.reno"></output></div>
+            <input id="reno" class="range" type="range" min="0" max="150000" step="5000" data-field="flat.reno">
+          </div>
+          <div class="field">
+            <div class="field-row"><label for="rent">Rent while waiting</label><output data-for="flat.rent" data-suffix=" / mo"></output></div>
+            <input id="rent" class="range" type="range" min="0" max="3000" step="100" data-field="flat.rent">
+          </div>
+          <div class="saved-so-far">
+            <span class="saved-title">Saved so far</span>
+            <label class="number-field">Cash
+              <span class="money"><input type="number" min="0" step="500" inputmode="numeric" data-field="savedCash"></span>
+            </label>
+            <label class="number-field">CPF OA
+              <span class="money"><input type="number" min="0" step="500" inputmode="numeric" data-field="savedOA"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <p class="cpf-note"><strong>How CPF fits in:</strong> 23% of each gross salary (on pay up to S$8,000) goes into the CPF Ordinary Account. It can pay the downpayment, stamp duty and monthly loan. Reno, furniture and trips come out of the cash you save.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="trips-title">
+      <div class="section-head">
+        <div>
+          <h2 id="trips-title" class="section-title">Trips before keys</h2>
+          <span id="trips-total" class="section-sub"></span>
+        </div>
+        <span class="note">the fun part</span>
+      </div>
+
+      <form id="trip-form" class="trip-form" autocomplete="off">
+        <label>Where to?
+          <input id="trip-name" type="text" maxlength="40" placeholder="Taipei" required>
+        </label>
+        <label for="trip-month-button">When
+          <span class="month-field" data-months="any">
+            <input id="trip-month" type="hidden">
+            <button id="trip-month-button" type="button" class="month-button"></button>
+          </span>
+        </label>
+        <label>Budget
+          <span class="money"><input id="trip-budget" type="number" min="0" step="100" inputmode="numeric" placeholder="2000" required></span>
+        </label>
+        <button type="submit" class="btn btn--ink">Add trip</button>
+      </form>
+
+      <ul id="passes" class="passes"></ul>
+      <p id="trips-empty" class="trips-empty" hidden>No trips yet. Add one above and the calculator checks you can afford it in the month you go.</p>
+    </section>
+
+    <div class="results">
+      <section class="receipt" aria-labelledby="receipt-title">
+        <div class="receipt-head">
+          <h2 id="receipt-title" class="receipt-title">Your BTO bill</h2>
+          <span id="receipt-sub" class="receipt-sub"></span>
+        </div>
+        <dl class="lines">
+          <div class="line"><dt>Downpayment (25%)</dt><span class="dots"></span><dd id="bill-downpayment"></dd></div>
+          <div class="line line--sub"><dt>at agreement for lease (2.5%)</dt><span class="dots"></span><dd id="bill-at-signing"></dd></div>
+          <div class="line line--sub"><dt>at key collection (22.5%)</dt><span class="dots"></span><dd id="bill-at-keys"></dd></div>
+          <div class="line"><dt>Buyer's stamp duty</dt><span class="dots"></span><dd id="bill-stamp-duty"></dd></div>
+          <div class="line line--sub"><dt>paid by CPF OA</dt><span class="dots"></span><dd id="bill-cpf"></dd></div>
+          <div class="line line--sub"><dt>paid in cash</dt><span class="dots"></span><dd id="bill-cash"></dd></div>
+          <div class="line"><dt>Reno and furniture</dt><span class="dots"></span><dd id="bill-reno"></dd></div>
+        </dl>
+        <dl class="lines">
+          <div class="line line--total"><dt>Cash needed at keys</dt><span class="dots"></span><dd id="bill-cash-needed"></dd></div>
+          <div class="line line--sub"><dt>plus trips, paid along the way</dt><span class="dots"></span><dd id="bill-trips"></dd></div>
+        </dl>
+        <dl class="lines">
+          <div class="line"><dt>HDB loan (75%)</dt><span class="dots"></span><dd id="bill-loan"></dd></div>
+          <div class="line"><dt>Monthly loan, 25 yrs at 2.6%</dt><span class="dots"></span><dd id="bill-instalment"></dd></div>
+          <div class="line line--sub"><dt>CPF OA coming in each month</dt><span class="dots"></span><dd id="bill-oa-monthly"></dd></div>
+          <div class="line line--sub"><dt>share of income (HDB limit 30%)</dt><span class="dots"></span><dd id="bill-servicing-ratio"></dd></div>
+        </dl>
+        <p id="bill-note" class="receipt-foot"></p>
+      </section>
+
+      <section class="keys-day panel" aria-labelledby="keys-day-title">
+        <div>
+          <h2 id="keys-day-title" class="section-title">On key collection day</h2>
+          <p id="verdict-headline" class="verdict-headline"></p>
+          <p id="verdict-detail" class="verdict-detail"></p>
+        </div>
+        <dl class="stats">
+          <div class="stat"><dt>Cash + CPF OA</dt><dd id="stat-total"></dd></div>
+          <div class="stat"><dt>Needed at keys</dt><dd id="stat-needed"></dd><dd class="stat-sub">Flat and reno</dd></div>
+          <div class="stat"><dt>CPF OA</dt><dd id="stat-oa"></dd><dd id="stat-oa-sub" class="stat-sub"></dd></div>
+          <div class="stat"><dt>Cash</dt><dd id="stat-cash"></dd><dd id="stat-cash-sub" class="stat-sub"></dd></div>
+        </dl>
+        <div class="legend">
+          <span><i style="--c: var(--mint-ink)"></i>Cash + CPF OA</span>
+          <span><i style="--c: var(--blue-ink)"></i>CPF OA</span>
+          <span><i class="dashed" style="--c: var(--butter-ink)"></i>Cash</span>
+          <span><i class="dashed" style="--c: var(--soft-ink)"></i>Needed at keys</span>
+        </div>
+        <div class="chart-box">
+          <canvas id="savings-chart" aria-label="Savings from today to key collection"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <footer class="about">
+      <p><strong>Estimates only.</strong> Assumes 2026 CPF rates for age 35 and below, an HDB loan at 2.6% over 25 years for 75% of the price, 2.5% a year on CPF OA and 3.5% on cash savings. Check your own figures with HDB and CPF.</p>
+      <p id="storage-note">Your numbers stay in the browser you're using. Nobody else sees them, including whoever sent you the link.</p>
+      <p><button id="reset" type="button" class="btn">Reset to example numbers</button></p>
+    </footer>
+  </main>
+</body>
+</html>
